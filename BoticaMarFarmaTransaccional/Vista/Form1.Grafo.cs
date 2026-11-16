@@ -21,6 +21,7 @@ namespace BoticaMarFarmaTransaccional
         private ComboBox cmbGrafoDestino = null!;
         private Button btnGrafoDijkstra = null!;
         private Button btnGrafoPrim = null!;
+        private Button btnGrafoFloyd = null!;
         private Button btnGrafoBFS = null!;
         private Button btnGrafoDFS = null!;
         private Button btnGrafoMatriz = null!;
@@ -55,7 +56,7 @@ namespace BoticaMarFarmaTransaccional
             };
             Label lblSub = new Label
             {
-                Text = "Grafo no dirigido con lista de adyacencia: exploración BFS/DFS y cálculo de ruta más corta mediante Dijkstra.",
+                Text = "Grafo no dirigido: BFS/DFS, Dijkstra, Prim (MST), Floyd-Warshall y Matrices de red.",
                 Font = new Font("Segoe UI", 9F, FontStyle.Italic),
                 ForeColor = Color.FromArgb(127, 140, 141),
                 Location = new Point(27, 40),
@@ -101,22 +102,34 @@ namespace BoticaMarFarmaTransaccional
 
             btnGrafoDijkstra = new Button
             {
-                Text = "Ruta Más Corta (Dijkstra)",
+                Text = "Ruta (Dijkstra)",
                 Location = new Point(15, 72),
-                Size = new Size(225, 30),
+                Size = new Size(145, 30),
                 BackColor = Color.FromArgb(46, 204, 113),
                 ForeColor = Color.White,
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
 
             btnGrafoPrim = new Button
             {
-                Text = "Red Mín. (Prim)",
-                Location = new Point(246, 72),
-                Size = new Size(129, 30),
+                Text = "Prim (MST)",
+                Location = new Point(166, 72),
+                Size = new Size(94, 30),
                 BackColor = Color.FromArgb(22, 160, 133),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+
+            btnGrafoFloyd = new Button
+            {
+                Text = "Floyd-Warshall",
+                Location = new Point(266, 72),
+                Size = new Size(109, 30),
+                BackColor = Color.FromArgb(142, 68, 173),
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
@@ -219,16 +232,16 @@ namespace BoticaMarFarmaTransaccional
             grpGrafoAlgoritmos.Controls.AddRange(new Control[]
             {
                 lOri, lDes, cmbGrafoOrigen, cmbGrafoDestino,
-                btnGrafoDijkstra, btnGrafoPrim, btnGrafoBFS, btnGrafoDFS, btnGrafoMatriz,
+                btnGrafoDijkstra, btnGrafoPrim, btnGrafoFloyd, btnGrafoBFS, btnGrafoDFS, btnGrafoMatriz,
                 lDesp, cmbGrafoProducto, btnGrafoDespachar,
                 lSed, txtGrafoNuevoCod, txtGrafoNuevoNombre, cmbGrafoNuevoTipo, btnGrafoAgregarVertice,
                 lAri, cmbGrafoAristaA, cmbGrafoAristaB, nudGrafoKm, btnGrafoAgregarArista
             });
 
-            // Panel inferior: detalle paso a paso de BFS, DFS, Dijkstra o despacho.
+            // Panel inferior: detalle paso a paso de BFS, DFS, Dijkstra, Prim, Floyd-Warshall o despacho.
             GroupBox grpGrafoTrazas = new GroupBox
             {
-                Text = "Resultados y Trazas Paso a Paso (BFS / DFS / Dijkstra / Despacho)",
+                Text = "Resultados y Trazas Paso a Paso (Dijkstra / Prim / Floyd-Warshall / BFS / DFS)",
                 Location = new Point(25, 425),
                 Size = new Size(980, 225)
             };
@@ -263,6 +276,14 @@ namespace BoticaMarFarmaTransaccional
                 List<string> trazas = new List<string>();
                 double totalKm = grafoRutas.CalcularArbolExpansionMinimaPrim(trazas);
                 lblGrafoRutaResumen.Text = $"Prim (Red Mínima): {totalKm:F1} km";
+                MostrarTrazasGrafo(trazas);
+            };
+
+            btnGrafoFloyd.Click += (s, e) =>
+            {
+                List<string> trazas = new List<string>();
+                grafoRutas.CalcularMatrizFloydWarshall(trazas);
+                lblGrafoRutaResumen.Text = $"Floyd-Warshall: pares mínimos {grafoRutas.CantidadVertices}x{grafoRutas.CantidadVertices}";
                 MostrarTrazasGrafo(trazas);
             };
 

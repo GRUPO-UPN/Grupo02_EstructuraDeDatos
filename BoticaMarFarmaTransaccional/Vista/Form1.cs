@@ -20,6 +20,7 @@ namespace BoticaMarFarmaTransaccional
         private ListaDobleTransacciones listaHistorial = new ListaDobleTransacciones();
         private ListaCircularCampanas carruselCampanas = new ListaCircularCampanas();
         private Cola<TurnoAtencion> colaAtencion = new Cola<TurnoAtencion>();
+        private Cola<TransaccionVenta> colaSyncOffline = new Cola<TransaccionVenta>();
         private ArbolBinario<Producto> arbolInventario = new ArbolBinario<Producto>();
         private ArbolBinario<TransaccionVenta> arbolOperaciones = new ArbolBinario<TransaccionVenta>();
         private GrafoRutas grafoRutas = new GrafoRutas();
@@ -73,18 +74,21 @@ namespace BoticaMarFarmaTransaccional
         private Button btnDeshacerPila = null!;
         private Button btnLimpiarCarrito = null!;
         private NumericUpDown nudDescuentoPct = null!;
+        private CheckBox chkModoOffline = null!;
         private Label lblFormulaPostfija = null!;
         private Label lblSubtotalVenta = null!;
         private Label lblIgvVenta = null!;
         private Label lblTotalVenta = null!;
         private Button btnProcesarCobro = null!;
 
-        // Controles para mostrar la tabla, métricas y búsqueda ABB del historial.
+        // Controles para mostrar la tabla, métricas, búsqueda ABB y cola offline del historial.
         private DataGridView dgvHistorialCompleto = null!;
         private Label lblMetricaTotalOperaciones = null!;
         private Label lblMetricaRecaudacionCaja = null!;
         private TextBox txtBuscarOpAbb = null!;
         private Button btnBuscarOpAbb = null!;
+        private Label lblEstadoOfflineHistorial = null!;
+        private Button btnSincronizarOffline = null!;
 
         // Controles para navegar por las transacciones y mostrar su comprobante.
         private Button btnAuditoriaAtras = null!;
@@ -416,6 +420,14 @@ namespace BoticaMarFarmaTransaccional
 
             Label lblDesc = new Label { Text = "Desc. (%):", Location = new Point(15, 350), AutoSize = true };
             nudDescuentoPct = new NumericUpDown { Location = new Point(85, 348), Size = new Size(55, 23), Minimum = 0, Maximum = 50, Value = 0 };
+            chkModoOffline = new CheckBox
+            {
+                Text = "Sin red (Cola Offline)",
+                Location = new Point(150, 349),
+                AutoSize = true,
+                ForeColor = Color.FromArgb(192, 57, 43),
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold)
+            };
             lblFormulaPostfija = new Label
             {
                 Text = "Postfija (Pila): 0.00",
@@ -442,7 +454,7 @@ namespace BoticaMarFarmaTransaccional
 
             grpCarrito.Controls.AddRange(new Control[] {
                 dgvCarrito, btnDeshacerPila, btnLimpiarCarrito,
-                lblDesc, nudDescuentoPct, lblFormulaPostfija,
+                lblDesc, nudDescuentoPct, chkModoOffline, lblFormulaPostfija,
                 lblSubtotalVenta, lblIgvVenta, lblTotalVenta, btnProcesarCobro
             });
 
@@ -477,7 +489,7 @@ namespace BoticaMarFarmaTransaccional
             dgvHistorialCompleto = new DataGridView
             {
                 Location = new Point(25, 110),
-                Size = new Size(980, 480),
+                Size = new Size(980, 470),
                 BackgroundColor = Color.White,
                 ReadOnly = true,
                 AllowUserToAddRows = false,
@@ -493,10 +505,36 @@ namespace BoticaMarFarmaTransaccional
             dgvHistorialCompleto.Columns.Add("Estado", "Estado");
             dgvHistorialCompleto.Columns.Add("Items", "Medicamentos");
 
+            lblEstadoOfflineHistorial = new Label
+            {
+                Text = "Contingencia Rural (Cola FIFO Local): 0 operaciones pendientes de sincronización.",
+                Location = new Point(25, 592),
+                Size = new Size(710, 42),
+                BackColor = Color.FromArgb(240, 243, 244),
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(44, 62, 80),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(8, 0, 8, 0)
+            };
+
+            btnSincronizarOffline = new Button
+            {
+                Text = "Sincronizar Cola Offline (Dequeue)",
+                Location = new Point(745, 592),
+                Size = new Size(260, 42),
+                BackColor = Color.FromArgb(230, 126, 34),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+
             pnlVistaHistorial.Controls.AddRange(new Control[]
             {
                 lblTit, lblMetricaTotalOperaciones, lblMetricaRecaudacionCaja,
-                lblBusOp, txtBuscarOpAbb, btnBuscarOpAbb, dgvHistorialCompleto
+                lblBusOp, txtBuscarOpAbb, btnBuscarOpAbb, dgvHistorialCompleto,
+                lblEstadoOfflineHistorial, btnSincronizarOffline
             });
             pnlContenedorPrincipal.Controls.Add(pnlVistaHistorial);
         }
@@ -1011,18 +1049,55 @@ namespace BoticaMarFarmaTransaccional
                 }
 
                 string codigoOp = $"OP-{contadorOperaciones++}";
-                TransaccionVenta nueva = new TransaccionVenta(codigoOp, cli, canal, total, resumen);
+                bool sinRed = chkModoOffline.Checked;
+                string estado = sinRed ? "PENDIENTE SYNC (OFFLINE)" : "EXITOSA";
+                TransaccionVenta nueva = new TransaccionVenta(codigoOp, cli, canal, total, resumen, estado);
 
                 // Registra la operación en Lista Simple (historial), Lista Doble (auditoría) y ABB (búsqueda por código).
                 RegistrarTransaccionEnEstructuras(nueva, insertarAbbBalanceado: true);
-                MessageBox.Show($"Transacción {codigoOp} procesada vía {canal}.\nMonto: S/ {total:F2}", "Venta Confirmada", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (sinRed)
+                {
+                    colaSyncOffline.Enqueue(nueva);
+                    MessageBox.Show(
+                        $"Conectividad intermitente: {codigoOp} guardada localmente en Cola Offline (D.L. N.° 1412).\nEn espera de sincronización: {colaSyncOffline.Longitud()} | Monto: S/ {total:F2}",
+                        "Contingencia Offline",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show($"Transacción {codigoOp} procesada vía {canal}.\nMonto: S/ {total:F2}", "Venta Confirmada", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
 
                 pilaCarrito.Limpiar();
                 nudDescuentoPct.Value = 0;
+                chkModoOffline.Checked = false;
                 ActualizarCarritoVisual();
+                ActualizarGrillaHistorial();
                 RefrescarComboProductos();
                 RefrescarVistaInventario();
                 ActualizarResumenSidebar();
+            };
+
+            btnSincronizarOffline.Click += (s, e) =>
+            {
+                if (colaSyncOffline.EstaVacia())
+                {
+                    MessageBox.Show("No hay operaciones pendientes en la Cola Offline.", "Contingencia Rural", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                int sincronizadas = 0;
+                while (!colaSyncOffline.EstaVacia())
+                {
+                    TransaccionVenta op = colaSyncOffline.Dequeue();
+                    op.Estado = "SINCRONIZADA";
+                    sincronizadas++;
+                }
+
+                ActualizarGrillaHistorial();
+                RefrescarAuditoriaVisual();
+                MessageBox.Show($"Se reintentaron y sincronizaron {sincronizadas} operación(es) en estricto orden FIFO.", "Sincronización Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
 
             btnAuditoriaAtras.Click += (s, e) => {
@@ -1187,6 +1262,13 @@ namespace BoticaMarFarmaTransaccional
             }
             lblMetricaTotalOperaciones.Text = $"Operaciones Totales: {historial.Length}";
             lblMetricaRecaudacionCaja.Text = $"Caja Total: S/ {recaudacion:F2}";
+            int pendientes = colaSyncOffline.Longitud();
+            lblEstadoOfflineHistorial.Text = pendientes == 0
+                ? "Contingencia Rural (Cola FIFO Local): 0 operaciones pendientes — Canal en línea."
+                : $"Contingencia Rural (Cola FIFO Local): {pendientes} operación(es) en espera de reintento (D.L. N.° 1412).";
+            lblEstadoOfflineHistorial.ForeColor = pendientes == 0
+                ? Color.FromArgb(39, 174, 96)
+                : Color.FromArgb(192, 57, 43);
         }
 
         // Presenta los datos de la transacción seleccionada en la Lista Doble o el mensaje de historial vacío.

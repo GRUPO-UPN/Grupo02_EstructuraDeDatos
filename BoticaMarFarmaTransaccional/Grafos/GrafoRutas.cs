@@ -335,6 +335,72 @@ namespace BoticaMarFarmaTransaccional.Grafos
             return totalKm;
         }
 
+        // Algoritmo de Floyd-Warshall: calcula las distancias mínimas entre TODOS los pares de sedes.
+        public double[,] CalcularMatrizFloydWarshall(List<string> trazas)
+        {
+            int n = vertices.Count;
+            double[,] dist = new double[n, n];
+            if (n == 0) return dist;
+
+            // Paso 1: inicializar matriz con 0 en la diagonal, pesos directos e infinito donde no hay enlace.
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    dist[i, j] = (i == j) ? 0 : double.MaxValue;
+                }
+
+                foreach (var arista in vertices[i].Adyacentes)
+                {
+                    int v = vertices.IndexOf(arista.Destino);
+                    if (arista.DistanciaKm < dist[i, v])
+                    {
+                        dist[i, v] = arista.DistanciaKm;
+                    }
+                }
+            }
+
+            // Paso 2: probar cada vértice k como puente intermedio para acortar distancias entre i y j.
+            for (int k = 0; k < n; k++)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    if (dist[i, k] == double.MaxValue) continue;
+                    for (int j = 0; j < n; j++)
+                    {
+                        if (dist[k, j] == double.MaxValue) continue;
+                        double nuevaDist = dist[i, k] + dist[k, j];
+                        if (nuevaDist < dist[i, j])
+                        {
+                            dist[i, j] = nuevaDist;
+                        }
+                    }
+                }
+            }
+
+            // Paso 3: generar tabla de distancias mínimas para mostrar en pantalla.
+            trazas.Add("[FLOYD-WARSHALL] Matriz de distancias mínimas entre todas las sedes (km):");
+            string cabecera = "       ";
+            for (int j = 0; j < n; j++)
+            {
+                cabecera += $" {vertices[j].Dato.Codigo,6}";
+            }
+            trazas.Add(cabecera);
+            trazas.Add(new string('-', cabecera.Length));
+
+            for (int i = 0; i < n; i++)
+            {
+                string fila = $"{vertices[i].Dato.Codigo,-6}|";
+                for (int j = 0; j < n; j++)
+                {
+                    fila += dist[i, j] == double.MaxValue ? "    inf" : $" {dist[i, j],6:F1}";
+                }
+                trazas.Add(fila);
+            }
+
+            return dist;
+        }
+
         // Genera la Matriz de Adyacencia ponderada (filas = origen, columnas = destino) para inspección tabular.
         public List<string> ObtenerMatrizAdyacenciaTexto()
         {
