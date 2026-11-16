@@ -174,7 +174,7 @@ namespace BoticaMarFarmaTransaccional.Arboles
             lista.Add(nodo.Dato);
         }
 
-        // Calcula la altura máxima del árbol de forma recursiva.
+        // Calcula la altura máxima del árbol de forma recursiva
         public int ObtenerAltura()
         {
             return AlturaRec(raiz);
