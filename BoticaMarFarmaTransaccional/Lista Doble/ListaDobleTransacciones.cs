@@ -6,9 +6,9 @@ namespace BoticaMarFarmaTransaccional
     // Mantiene transacciones enlazadas para recorrerlas hacia delante y hacia atrás.
     public class ListaDobleTransacciones
     {
-        private NodoDobleTransaccion cabeza;
-        private NodoDobleTransaccion cola;
-        public NodoDobleTransaccion NodoActual { get; private set; }
+        private NodoDobleTransaccion? cabeza;
+        private NodoDobleTransaccion? cola;
+        public NodoDobleTransaccion? NodoActual { get; private set; }
         public int TotalRegistros { get; private set; }
 
         public ListaDobleTransacciones()
@@ -31,7 +31,7 @@ namespace BoticaMarFarmaTransaccional
             }
             else
             {
-                cola.Siguiente = nuevo;
+                cola!.Siguiente = nuevo;
                 nuevo.Anterior = cola;
                 cola = nuevo;
                 NodoActual = nuevo;
@@ -40,29 +40,29 @@ namespace BoticaMarFarmaTransaccional
         }
 
         // Navegación bidireccional inmediata en O(1)
-        public TransaccionVenta Retroceder()
+        public TransaccionVenta? Retroceder()
         {
             if (NodoActual != null && NodoActual.Anterior != null)
             {
                 NodoActual = NodoActual.Anterior;
                 return NodoActual.Dato;
             }
-            return NodoActual?.Dato;
+            return null;
         }
 
-        // Avanza a la siguiente transacción si existe; en caso contrario conserva la actual.
-        public TransaccionVenta Avanzar()
+        // Avanza a la siguiente transacción si existe; en caso contrario devuelve null para indicar límite.
+        public TransaccionVenta? Avanzar()
         {
             if (NodoActual != null && NodoActual.Siguiente != null)
             {
                 NodoActual = NodoActual.Siguiente;
                 return NodoActual.Dato;
             }
-            return NodoActual?.Dato;
+            return null;
         }
 
         // Devuelve la transacción seleccionada o null si no hay nodo actual.
-        public TransaccionVenta ObtenerActual()
+        public TransaccionVenta? ObtenerActual()
         {
             return NodoActual?.Dato;
         }
@@ -70,7 +70,7 @@ namespace BoticaMarFarmaTransaccional
         public TransaccionVenta[] ObtenerHistorial()
         {
             TransaccionVenta[] lista = new TransaccionVenta[TotalRegistros];
-            NodoDobleTransaccion actual = cabeza;
+            NodoDobleTransaccion? actual = cabeza;
             int i = 0;
             while (actual != null)
             {

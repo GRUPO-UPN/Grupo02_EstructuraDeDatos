@@ -268,7 +268,7 @@ namespace BoticaMarFarmaTransaccional
                     : txtAbbCodigo.Text.Trim().ToUpper();
 
                 if (string.IsNullOrWhiteSpace(txtAbbNombre.Text) ||
-                    !decimal.TryParse(txtAbbPrecio.Text, out decimal precio) ||
+                    !IntentarLeerDecimal(txtAbbPrecio.Text, out decimal precio) ||
                     precio <= 0)
                 {
                     MessageBox.Show("Ingrese un nombre válido y un precio mayor a 0.", "Validación ABB", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -316,7 +316,7 @@ namespace BoticaMarFarmaTransaccional
                 {
                     nodo.Dato.Nombre = txtAbbNombre.Text.Trim();
                 }
-                if (decimal.TryParse(txtAbbPrecio.Text, out decimal nuevoPrecio) && nuevoPrecio > 0)
+                if (IntentarLeerDecimal(txtAbbPrecio.Text, out decimal nuevoPrecio) && nuevoPrecio > 0)
                 {
                     nodo.Dato.PrecioUnitario = nuevoPrecio;
                 }

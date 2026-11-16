@@ -6,7 +6,7 @@ namespace BoticaMarFarmaTransaccional.Pilas
     public class NodoDetalle
     {
         public DetalleVenta Dato { get; set; }
-        public NodoDetalle Siguiente { get; set; }
+        public NodoDetalle? Siguiente { get; set; }
 
         public NodoDetalle(DetalleVenta dato)
         {

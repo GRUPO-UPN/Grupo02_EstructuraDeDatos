@@ -20,8 +20,10 @@ namespace BoticaMarFarmaTransaccional
         private ComboBox cmbGrafoOrigen = null!;
         private ComboBox cmbGrafoDestino = null!;
         private Button btnGrafoDijkstra = null!;
+        private Button btnGrafoPrim = null!;
         private Button btnGrafoBFS = null!;
         private Button btnGrafoDFS = null!;
+        private Button btnGrafoMatriz = null!;
 
         private ComboBox cmbGrafoProducto = null!;
         private Button btnGrafoDespachar = null!;
@@ -99,9 +101,9 @@ namespace BoticaMarFarmaTransaccional
 
             btnGrafoDijkstra = new Button
             {
-                Text = "Calcular Ruta Más Corta (Dijkstra)",
+                Text = "Ruta Más Corta (Dijkstra)",
                 Location = new Point(15, 72),
-                Size = new Size(360, 30),
+                Size = new Size(225, 30),
                 BackColor = Color.FromArgb(46, 204, 113),
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
@@ -109,11 +111,23 @@ namespace BoticaMarFarmaTransaccional
                 Cursor = Cursors.Hand
             };
 
+            btnGrafoPrim = new Button
+            {
+                Text = "Red Mín. (Prim)",
+                Location = new Point(246, 72),
+                Size = new Size(129, 30),
+                BackColor = Color.FromArgb(22, 160, 133),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+
             btnGrafoBFS = new Button
             {
-                Text = "Recorrido BFS (Anchura)",
+                Text = "BFS (Anchura)",
                 Location = new Point(15, 108),
-                Size = new Size(175, 28),
+                Size = new Size(116, 28),
                 BackColor = Color.FromArgb(41, 128, 185),
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
@@ -123,10 +137,22 @@ namespace BoticaMarFarmaTransaccional
 
             btnGrafoDFS = new Button
             {
-                Text = "Recorrido DFS (Profundidad)",
-                Location = new Point(200, 108),
-                Size = new Size(175, 28),
+                Text = "DFS (Prof.)",
+                Location = new Point(137, 108),
+                Size = new Size(116, 28),
                 BackColor = Color.FromArgb(52, 73, 94),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+
+            btnGrafoMatriz = new Button
+            {
+                Text = "Matriz Ady.",
+                Location = new Point(259, 108),
+                Size = new Size(116, 28),
+                BackColor = Color.FromArgb(127, 140, 141),
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat,
@@ -193,7 +219,7 @@ namespace BoticaMarFarmaTransaccional
             grpGrafoAlgoritmos.Controls.AddRange(new Control[]
             {
                 lOri, lDes, cmbGrafoOrigen, cmbGrafoDestino,
-                btnGrafoDijkstra, btnGrafoBFS, btnGrafoDFS,
+                btnGrafoDijkstra, btnGrafoPrim, btnGrafoBFS, btnGrafoDFS, btnGrafoMatriz,
                 lDesp, cmbGrafoProducto, btnGrafoDespachar,
                 lSed, txtGrafoNuevoCod, txtGrafoNuevoNombre, cmbGrafoNuevoTipo, btnGrafoAgregarVertice,
                 lAri, cmbGrafoAristaA, cmbGrafoAristaB, nudGrafoKm, btnGrafoAgregarArista
@@ -231,6 +257,22 @@ namespace BoticaMarFarmaTransaccional
         private void VincularEventosGrafos()
         {
             btnGrafoDijkstra.Click += (s, e) => EjecutarDijkstraEnVista(null);
+
+            btnGrafoPrim.Click += (s, e) =>
+            {
+                List<string> trazas = new List<string>();
+                double totalKm = grafoRutas.CalcularArbolExpansionMinimaPrim(trazas);
+                lblGrafoRutaResumen.Text = $"Prim (Red Mínima): {totalKm:F1} km";
+                MostrarTrazasGrafo(trazas);
+            };
+
+            btnGrafoMatriz.Click += (s, e) =>
+            {
+                List<string> matriz = new List<string> { "[MATRIZ DE ADYACENCIA PONDERADA (km)]" };
+                matriz.AddRange(grafoRutas.ObtenerMatrizAdyacenciaTexto());
+                lblGrafoRutaResumen.Text = $"Matriz {grafoRutas.CantidadVertices}x{grafoRutas.CantidadVertices} generada";
+                MostrarTrazasGrafo(matriz);
+            };
 
             btnGrafoBFS.Click += (s, e) =>
             {

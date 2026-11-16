@@ -6,7 +6,7 @@ namespace BoticaMarFarmaTransaccional
     public class NodoCircularCampana
     {
         public CampanaSalud Dato { get; set; }
-        public NodoCircularCampana Siguiente { get; set; }
+        public NodoCircularCampana? Siguiente { get; set; }
 
         public NodoCircularCampana(CampanaSalud dato)
         {

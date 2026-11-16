@@ -9,8 +9,8 @@ namespace BoticaMarFarmaTransaccional.ListaSimple
    
     public class ListaSimpleTransacciones
     {
-        private NodoSimpleTransaccion cabeza;
-        private NodoSimpleTransaccion cola;
+        private NodoSimpleTransaccion? cabeza;
+        private NodoSimpleTransaccion? cola;
         public int TotalOperaciones { get; private set; }
 
         public ListaSimpleTransacciones()
@@ -32,7 +32,7 @@ namespace BoticaMarFarmaTransaccional.ListaSimple
             }
             else
             {
-                cola.Siguiente = nuevo;
+                cola!.Siguiente = nuevo;
                 cola = nuevo; // Se desplaza la cola al nuevo elemento
             }
             TotalOperaciones++;
@@ -48,7 +48,7 @@ namespace BoticaMarFarmaTransaccional.ListaSimple
         public TransaccionVenta[] ObtenerHistorialCompleto()
         {
             TransaccionVenta[] arreglo = new TransaccionVenta[TotalOperaciones];
-            NodoSimpleTransaccion actual = cabeza;
+            NodoSimpleTransaccion? actual = cabeza;
             int indice = 0;
 
             while (actual != null)

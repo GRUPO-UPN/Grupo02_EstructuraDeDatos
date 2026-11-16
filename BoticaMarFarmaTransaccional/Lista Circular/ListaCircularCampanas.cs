@@ -6,9 +6,9 @@ namespace BoticaMarFarmaTransaccional
     // Administra campañas en un anillo para poder recorrerlas continuamente.
     public class ListaCircularCampanas
     {
-        private NodoCircularCampana cabeza;
-        private NodoCircularCampana cola;
-        public NodoCircularCampana NodoActual { get; private set; }
+        private NodoCircularCampana? cabeza;
+        private NodoCircularCampana? cola;
+        public NodoCircularCampana? NodoActual { get; private set; }
         public int TotalCampanas { get; private set; }
 
         public ListaCircularCampanas()
@@ -33,7 +33,7 @@ namespace BoticaMarFarmaTransaccional
             }
             else
             {
-                cola.Siguiente = nuevo;
+                cola!.Siguiente = nuevo;
                 nuevo.Siguiente = cabeza; // Retorno permanente al inicio
                 cola = nuevo;
             }
@@ -41,9 +41,9 @@ namespace BoticaMarFarmaTransaccional
         }
 
         // Desplazamiento rotativo en tiempo constante O(1)
-        public CampanaSalud AvanzarSiguiente()
+        public CampanaSalud? AvanzarSiguiente()
         {
-            if (NodoActual != null)
+            if (NodoActual != null && NodoActual.Siguiente != null)
             {
                 NodoActual = NodoActual.Siguiente;
                 return NodoActual.Dato;
@@ -52,7 +52,7 @@ namespace BoticaMarFarmaTransaccional
         }
 
         // Devuelve la campaña del nodo actual, o null si todavía no hay ninguna.
-        public CampanaSalud ObtenerActual()
+        public CampanaSalud? ObtenerActual()
         {
             return NodoActual?.Dato;
         }
@@ -63,7 +63,7 @@ namespace BoticaMarFarmaTransaccional
             if (cabeza == null) return new string[] { "(No existen promociones en el carrusel circular)" };
 
             string[] lineas = new string[TotalCampanas];
-            NodoCircularCampana temp = cabeza;
+            NodoCircularCampana? temp = cabeza;
             int indice = 1;
 
             do
@@ -71,7 +71,7 @@ namespace BoticaMarFarmaTransaccional
                 string marca = (temp == NodoActual) ? " [EN PANTALLA]" : "";
                 string destino = (temp == cola)
                     ? $"{cabeza.Dato.Codigo} (Regresa a Cabeza)"
-                    : temp.Siguiente.Dato.Codigo;
+                    : temp!.Siguiente!.Dato.Codigo;
 
                 lineas[indice - 1] = $"Posición {indice}: [{temp.Dato.Codigo}] {temp.Dato.Titulo} " +
                                      $"| Creado: {temp.Dato.FechaRegistro:dd/MM HH:mm} " +
@@ -80,7 +80,7 @@ namespace BoticaMarFarmaTransaccional
 
                 temp = temp.Siguiente;
                 indice++;
-            } while (temp != cabeza && indice <= TotalCampanas);
+            } while (temp != null && temp != cabeza && indice <= TotalCampanas);
 
             return lineas;
         }

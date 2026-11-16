@@ -6,7 +6,7 @@ namespace BoticaMarFarmaTransaccional.Pilas
     // Pila LIFO para almacenar detalles de venta y retirarlos desde la cima.
     public class PilaDetalle
     {
-        private NodoDetalle cima;
+        private NodoDetalle? cima;
         public int Cantidad { get; private set; }
 
         public PilaDetalle()
@@ -25,21 +25,21 @@ namespace BoticaMarFarmaTransaccional.Pilas
         }
 
         // Operación Pop: Extrae de la cima en tiempo constante O(1)
-        public DetalleVenta Pop()
+        public DetalleVenta? Pop()
         {
             if (EstaVacia())
                 return null;
 
-            DetalleVenta datoExtraido = cima.Dato;
+            DetalleVenta datoExtraido = cima!.Dato;
             cima = cima.Siguiente;
             Cantidad--;
             return datoExtraido;
         }
 
         // Consulta el detalle superior sin retirarlo de la pila.
-        public DetalleVenta Top()
+        public DetalleVenta? Top()
         {
-            return EstaVacia() ? null : cima.Dato;
+            return EstaVacia() ? null : cima!.Dato;
         }
 
         // Indica si la pila no contiene detalles.
@@ -59,7 +59,7 @@ namespace BoticaMarFarmaTransaccional.Pilas
         public DetalleVenta[] ObtenerElementos()
         {
             DetalleVenta[] arreglo = new DetalleVenta[Cantidad];
-            NodoDetalle actual = cima;
+            NodoDetalle? actual = cima;
             int indice = 0;
             while (actual != null)
             {

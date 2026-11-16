@@ -1,23 +1,27 @@
 using System;
 using System.Drawing;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Windows.Forms;
 using BoticaMarFarmaTransaccional.Pilas;
 using BoticaMarFarmaTransaccional.Colas;
 using BoticaMarFarmaTransaccional.Arboles;
 using BoticaMarFarmaTransaccional.Grafos;
+using BoticaMarFarmaTransaccional.ListaSimple;
 using BoticaMarFarmaTransaccional.Entidades;
 
 namespace BoticaMarFarmaTransaccional
 {
     public partial class Form1 : Form
     {
-        // Estructuras enlazadas y no lineales que gestionan el carrito, historial, campañas, turnos, inventario y rutas.
+        // Estructuras enlazadas y no lineales que gestionan el carrito, historial, auditoría, campañas, turnos, inventario, consultas y rutas.
         private PilaDetalle pilaCarrito = new PilaDetalle();
+        private ListaSimpleTransacciones listaSimpleHistorial = new ListaSimpleTransacciones();
         private ListaDobleTransacciones listaHistorial = new ListaDobleTransacciones();
         private ListaCircularCampanas carruselCampanas = new ListaCircularCampanas();
         private Cola<TurnoAtencion> colaAtencion = new Cola<TurnoAtencion>();
         private ArbolBinario<Producto> arbolInventario = new ArbolBinario<Producto>();
+        private ArbolBinario<TransaccionVenta> arbolOperaciones = new ArbolBinario<TransaccionVenta>();
         private GrafoRutas grafoRutas = new GrafoRutas();
 
         // Datos en memoria: catálogos, numeración de registros y control del temporizador.
@@ -29,80 +33,84 @@ namespace BoticaMarFarmaTransaccional
         private bool timerActivo = true;
 
         // Contenedores y botones del menú lateral y de las vistas principales.
-        private Panel pnlSidebar;
-        private Panel pnlContenedorPrincipal;
-        private Button btnNavVenta;
-        private Button btnNavHistorial;
-        private Button btnNavAuditoria;
-        private Button btnNavCarrusel;
+        private Panel pnlSidebar = null!;
+        private Panel pnlContenedorPrincipal = null!;
+        private Button btnNavVenta = null!;
+        private Button btnNavHistorial = null!;
+        private Button btnNavAuditoria = null!;
+        private Button btnNavCarrusel = null!;
         private Button btnNavCola = null!;
         private Button btnNavInventario = null!;
         private Button btnNavGrafos = null!;
         private Label lblResumenSidebar = null!;
 
-        private Panel pnlVistaVenta;
-        private Panel pnlVistaHistorial;
-        private Panel pnlVistaAuditoria;
-        private Panel pnlVistaCarrusel;
+        private Panel pnlVistaVenta = null!;
+        private Panel pnlVistaHistorial = null!;
+        private Panel pnlVistaAuditoria = null!;
+        private Panel pnlVistaCarrusel = null!;
 
         // Controles de selección del cliente, del producto y de los datos de cobro.
-        private Label lblBannerPromocionVenta;
-        private RadioButton rbClienteExistente;
-        private RadioButton rbClienteNuevo;
-        private ComboBox cmbClientes;
-        private TextBox txtNuevoClienteNombre;
-        private TextBox txtNuevoClienteDni;
-        private Button btnGuardarCliente;
-        private Label lblClienteActivo;
+        private Label lblBannerPromocionVenta = null!;
+        private RadioButton rbClienteExistente = null!;
+        private RadioButton rbClienteNuevo = null!;
+        private ComboBox cmbClientes = null!;
+        private TextBox txtNuevoClienteNombre = null!;
+        private TextBox txtNuevoClienteDni = null!;
+        private Button btnGuardarCliente = null!;
+        private Label lblClienteActivo = null!;
 
-        private RadioButton rbProdExistente;
-        private RadioButton rbProdNuevo;
-        private ComboBox cmbProductos;
-        private TextBox txtNuevoProdNombre;
-        private TextBox txtNuevoProdPrecio;
-        private Button btnGuardarProducto;
-        private NumericUpDown nudCantidad;
-        private ComboBox cmbCanalCobro;
-        private Button btnAgregarAlCarrito;
+        private RadioButton rbProdExistente = null!;
+        private RadioButton rbProdNuevo = null!;
+        private ComboBox cmbProductos = null!;
+        private TextBox txtNuevoProdNombre = null!;
+        private TextBox txtNuevoProdPrecio = null!;
+        private Button btnGuardarProducto = null!;
+        private NumericUpDown nudCantidad = null!;
+        private ComboBox cmbCanalCobro = null!;
+        private Button btnAgregarAlCarrito = null!;
 
-        private DataGridView dgvCarrito;
-        private Button btnDeshacerPila;
-        private Button btnLimpiarCarrito;
-        private Label lblSubtotalVenta;
-        private Label lblIgvVenta;
-        private Label lblTotalVenta;
-        private Button btnProcesarCobro;
+        private DataGridView dgvCarrito = null!;
+        private Button btnDeshacerPila = null!;
+        private Button btnLimpiarCarrito = null!;
+        private NumericUpDown nudDescuentoPct = null!;
+        private Label lblFormulaPostfija = null!;
+        private Label lblSubtotalVenta = null!;
+        private Label lblIgvVenta = null!;
+        private Label lblTotalVenta = null!;
+        private Button btnProcesarCobro = null!;
 
-        // Controles para mostrar la tabla y las métricas del historial.
-        private DataGridView dgvHistorialCompleto;
-        private Label lblMetricaTotalOperaciones;
-        private Label lblMetricaRecaudacionCaja;
+        // Controles para mostrar la tabla, métricas y búsqueda ABB del historial.
+        private DataGridView dgvHistorialCompleto = null!;
+        private Label lblMetricaTotalOperaciones = null!;
+        private Label lblMetricaRecaudacionCaja = null!;
+        private TextBox txtBuscarOpAbb = null!;
+        private Button btnBuscarOpAbb = null!;
 
         // Controles para navegar por las transacciones y mostrar su comprobante.
-        private Button btnAuditoriaAtras;
-        private Button btnAuditoriaAdelante;
-        private Label lblTicketAuditado;
-        private Label lblDetalleAuditoria;
+        private Button btnAuditoriaAtras = null!;
+        private Button btnAuditoriaAdelante = null!;
+        private Label lblTicketAuditado = null!;
+        private Label lblDetalleAuditoria = null!;
 
         // Controles para mostrar, recorrer e incorporar campañas al carrusel.
-        private Panel pnlTarjetonAnuncio;
-        private Label lblCardTitulo;
-        private Label lblCardBeneficio;
-        private Label lblCardCanalYVigencia;
-        private Button btnAvanzarPromoManual;
-        private Button btnPausarReanudarTimer;
-        private ListBox lstTrazasAnillo;
-        private TextBox txtNuevaPromoTitulo;
-        private TextBox txtNuevaPromoBeneficio;
-        private ComboBox cmbNuevaPromoCanal;
-        private DateTimePicker dtpVigenciaPromo;
-        private Button btnAgregarPromoAnillo;
-        private System.Windows.Forms.Timer timerCarrusel;
+        private Panel pnlTarjetonAnuncio = null!;
+        private Label lblCardTitulo = null!;
+        private Label lblCardBeneficio = null!;
+        private Label lblCardCanalYVigencia = null!;
+        private Button btnAvanzarPromoManual = null!;
+        private Button btnPausarReanudarTimer = null!;
+        private ListBox lstTrazasAnillo = null!;
+        private TextBox txtNuevaPromoTitulo = null!;
+        private TextBox txtNuevaPromoBeneficio = null!;
+        private ComboBox cmbNuevaPromoCanal = null!;
+        private DateTimePicker dtpVigenciaPromo = null!;
+        private Button btnAgregarPromoAnillo = null!;
+        private System.Windows.Forms.Timer timerCarrusel = null!;
 
         // Configura la ventana, crea las vistas, carga datos, enlaza eventos e inicia el carrusel.
         public Form1()
         {
-            this.Text = "SISTEMA TRANSACCIONAL - BOTICA MARFARMA [CIIN1190P - EVALUACIÓN PARCIAL]";
+            this.Text = "SISTEMA TRANSACCIONAL - BOTICA MARFARMA [CIIN1190P - EVALUACIÓN FINAL]";
             this.Size = new Size(1320, 800);
             this.MinimumSize = new Size(1200, 720);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -129,6 +137,8 @@ namespace BoticaMarFarmaTransaccional
             timerCarrusel.Start();
 
             ActualizarBannerEnPantalla();
+            ActualizarGrillaHistorial();
+            RefrescarAuditoriaVisual();
             RefrescarVistaCola();
             RefrescarVistaInventario();
             RefrescarVistaGrafos();
@@ -404,6 +414,17 @@ namespace BoticaMarFarmaTransaccional
                 FlatStyle = FlatStyle.Flat
             };
 
+            Label lblDesc = new Label { Text = "Desc. (%):", Location = new Point(15, 350), AutoSize = true };
+            nudDescuentoPct = new NumericUpDown { Location = new Point(85, 348), Size = new Size(55, 23), Minimum = 0, Maximum = 50, Value = 0 };
+            lblFormulaPostfija = new Label
+            {
+                Text = "Postfija (Pila): 0.00",
+                Location = new Point(15, 378),
+                Size = new Size(320, 42),
+                Font = new Font("Consolas", 8F),
+                ForeColor = Color.FromArgb(52, 73, 94)
+            };
+
             lblSubtotalVenta = new Label { Text = "Subtotal: S/ 0.00", Location = new Point(350, 350), AutoSize = true };
             lblIgvVenta = new Label { Text = "IGV (18%): S/ 0.00", Location = new Point(350, 372), AutoSize = true };
             lblTotalVenta = new Label { Text = "TOTAL: S/ 0.00", Location = new Point(350, 395), AutoSize = true, Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = Color.FromArgb(192, 57, 43) };
@@ -421,6 +442,7 @@ namespace BoticaMarFarmaTransaccional
 
             grpCarrito.Controls.AddRange(new Control[] {
                 dgvCarrito, btnDeshacerPila, btnLimpiarCarrito,
+                lblDesc, nudDescuentoPct, lblFormulaPostfija,
                 lblSubtotalVenta, lblIgvVenta, lblTotalVenta, btnProcesarCobro
             });
 
@@ -428,15 +450,29 @@ namespace BoticaMarFarmaTransaccional
             pnlContenedorPrincipal.Controls.Add(pnlVistaVenta);
         }
 
-        // Prepara la tabla cronológica de ventas y los indicadores de operaciones y recaudación.
+        // Prepara la tabla cronológica (Lista Simple), métricas y buscador rápido ABB por código OP-XXXX.
         private void ConstruirVistaHistorial()
         {
             pnlVistaHistorial = new Panel { Dock = DockStyle.Fill, Padding = new Padding(25), Visible = false };
 
-            Label lblTit = new Label { Text = "HISTORIAL GENERAL DE OPERACIONES ", Font = new Font("Segoe UI", 13F, FontStyle.Bold), ForeColor = Color.FromArgb(44, 62, 80), Location = new Point(25, 15), AutoSize = true };
+            Label lblTit = new Label { Text = "HISTORIAL GENERAL DE OPERACIONES (LISTA SIMPLE Y BÚSQUEDA ABB)", Font = new Font("Segoe UI", 13F, FontStyle.Bold), ForeColor = Color.FromArgb(44, 62, 80), Location = new Point(25, 15), AutoSize = true };
 
-            lblMetricaTotalOperaciones = new Label { Text = "Operaciones Totales: 0", Location = new Point(25, 55), Size = new Size(250, 40), BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 10F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter };
-            lblMetricaRecaudacionCaja = new Label { Text = "Caja Total: S/ 0.00", Location = new Point(290, 55), Size = new Size(250, 40), BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 10F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.FromArgb(39, 174, 96) };
+            lblMetricaTotalOperaciones = new Label { Text = "Operaciones Totales: 0", Location = new Point(25, 55), Size = new Size(240, 40), BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 10F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter };
+            lblMetricaRecaudacionCaja = new Label { Text = "Caja Total: S/ 0.00", Location = new Point(280, 55), Size = new Size(240, 40), BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle, Font = new Font("Segoe UI", 10F, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.FromArgb(39, 174, 96) };
+
+            Label lblBusOp = new Label { Text = "Consulta O(log n) en ABB:", Location = new Point(540, 40), AutoSize = true, Font = new Font("Segoe UI", 8.5F, FontStyle.Bold) };
+            txtBuscarOpAbb = new TextBox { Location = new Point(540, 62), Size = new Size(240, 26), PlaceholderText = "Código de operación (ej. OP-1039)" };
+            btnBuscarOpAbb = new Button
+            {
+                Text = "Buscar Boleta (ABB)",
+                Location = new Point(790, 58),
+                Size = new Size(215, 34),
+                BackColor = Color.FromArgb(41, 128, 185),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
 
             dgvHistorialCompleto = new DataGridView
             {
@@ -446,6 +482,7 @@ namespace BoticaMarFarmaTransaccional
                 ReadOnly = true,
                 AllowUserToAddRows = false,
                 RowHeadersVisible = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
             };
             dgvHistorialCompleto.Columns.Add("Cod", "Código");
@@ -456,7 +493,11 @@ namespace BoticaMarFarmaTransaccional
             dgvHistorialCompleto.Columns.Add("Estado", "Estado");
             dgvHistorialCompleto.Columns.Add("Items", "Medicamentos");
 
-            pnlVistaHistorial.Controls.AddRange(new Control[] { lblTit, lblMetricaTotalOperaciones, lblMetricaRecaudacionCaja, dgvHistorialCompleto });
+            pnlVistaHistorial.Controls.AddRange(new Control[]
+            {
+                lblTit, lblMetricaTotalOperaciones, lblMetricaRecaudacionCaja,
+                lblBusOp, txtBuscarOpAbb, btnBuscarOpAbb, dgvHistorialCompleto
+            });
             pnlContenedorPrincipal.Controls.Add(pnlVistaHistorial);
         }
 
@@ -642,6 +683,18 @@ namespace BoticaMarFarmaTransaccional
             grafoRutas.AgregarArista("SED-04", "SED-06", 2.4, 10);
             grafoRutas.AgregarArista("SED-05", "SED-06", 1.5, 6);
 
+            // Se precargan 3 operaciones históricas para inicializar Lista Simple, Lista Doble y Árbol ABB de operaciones.
+            var op1 = new TransaccionVenta("OP-1038", listaClientes[0], "Efectivo Mostrador", 14.16m, "1x Paracetamol 500mg;");
+            var op2 = new TransaccionVenta("OP-1039", listaClientes[1], "Yape (Billetera Móvil)", 21.83m, "1x Amoxicilina Jarabe;");
+            var op3 = new TransaccionVenta("OP-1040", listaClientes[2], "BCP QR Interoperable", 17.70m, "1x Omeprazol 20mg;");
+            RegistrarTransaccionEnEstructuras(op1, insertarAbbBalanceado: false);
+            RegistrarTransaccionEnEstructuras(op2, insertarAbbBalanceado: false);
+            RegistrarTransaccionEnEstructuras(op3, insertarAbbBalanceado: false);
+            // Inserción en orden equilibrado (raíz OP-1039) dentro del ABB de operaciones.
+            arbolOperaciones.Insertar(op2);
+            arbolOperaciones.Insertar(op1);
+            arbolOperaciones.Insertar(op3);
+
             carruselCampanas.InsertarAlFinal(new CampanaSalud("CAMP-01", "Despistaje de Presión Arterial", "Medición gratuita por compras > S/ 20", "General", DateTime.Now.AddDays(7)));
             carruselCampanas.InsertarAlFinal(new CampanaSalud("CAMP-02", "Miércoles de Yape", "15% descuento en jarabes pediátricos", "Yape", DateTime.Now.AddDays(14)));
             carruselCampanas.InsertarAlFinal(new CampanaSalud("CAMP-03", "Campaña Dental MarFarma", "2x1 en pastas y cepillos dentales", "BCP QR", DateTime.Now.AddDays(30)));
@@ -819,7 +872,7 @@ namespace BoticaMarFarmaTransaccional
             btnGuardarProducto.Click += (s, e) =>
             {
                 if (string.IsNullOrWhiteSpace(txtNuevoProdNombre.Text) ||
-                    !decimal.TryParse(txtNuevoProdPrecio.Text, out decimal precio) ||
+                    !IntentarLeerDecimal(txtNuevoProdPrecio.Text, out decimal precio) ||
                     precio <= 0)
                 {
                     MessageBox.Show("Ingrese un medicamento válido y su precio mayor a 0.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -837,6 +890,47 @@ namespace BoticaMarFarmaTransaccional
                 rbProdExistente.Checked = true;
                 txtNuevoProdNombre.Clear();
                 txtNuevoProdPrecio.Clear();
+            };
+
+            nudDescuentoPct.ValueChanged += (s, e) => ActualizarCarritoVisual();
+
+            btnBuscarOpAbb.Click += (s, e) =>
+            {
+                string codigo = txtBuscarOpAbb.Text.Trim().ToUpper();
+                if (string.IsNullOrWhiteSpace(codigo))
+                {
+                    MessageBox.Show("Ingrese un código de operación (ej. OP-1039).", "Consulta ABB", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var nodo = arbolOperaciones.BuscarNodo(new TransaccionVenta(codigo, listaClientes[0], "", 0m, ""));
+                if (nodo == null)
+                {
+                    MessageBox.Show($"No se encontró la operación '{codigo}' en el Árbol ABB.", "No Encontrado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                TransaccionVenta t = nodo.Dato;
+                foreach (DataGridViewRow fila in dgvHistorialCompleto.Rows)
+                {
+                    if (string.Equals(fila.Cells["Cod"].Value?.ToString(), t.CodigoOperacion, StringComparison.OrdinalIgnoreCase))
+                    {
+                        fila.Selected = true;
+                        dgvHistorialCompleto.FirstDisplayedScrollingRowIndex = fila.Index;
+                        break;
+                    }
+                }
+
+                MessageBox.Show(
+                    $"Operación encontrada en el Árbol ABB:\n\n" +
+                    $"Código   : {t.CodigoOperacion}\n" +
+                    $"Paciente : {t.ClienteAsociado.NombreCompleto} (DNI: {t.ClienteAsociado.Dni})\n" +
+                    $"Canal    : {t.CanalPago}\n" +
+                    $"Detalle  : {t.ResumenProductos}\n" +
+                    $"Total    : S/ {t.MontoTotal:F2}",
+                    "Consulta O(log n) Exitosa",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             };
 
             btnAgregarAlCarrito.Click += (s, e) =>
@@ -865,7 +959,7 @@ namespace BoticaMarFarmaTransaccional
 
             btnDeshacerPila.Click += (s, e) =>
             {
-                DetalleVenta retirado = pilaCarrito.Pop(); // O(1)
+                DetalleVenta? retirado = pilaCarrito.Pop(); // O(1)
                 if (retirado != null)
                 {
                     MessageBox.Show($"Se anuló '{retirado.ProductoItem.Nombre}' del carrito.", "Deshacer Exitoso", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -877,7 +971,7 @@ namespace BoticaMarFarmaTransaccional
                 }
             };
 
-            btnLimpiarCarrito.Click += (s, e) => { pilaCarrito.Limpiar(); ActualizarCarritoVisual(); };
+            btnLimpiarCarrito.Click += (s, e) => { pilaCarrito.Limpiar(); nudDescuentoPct.Value = 0; ActualizarCarritoVisual(); };
 
             btnProcesarCobro.Click += (s, e) =>
             {
@@ -919,10 +1013,12 @@ namespace BoticaMarFarmaTransaccional
                 string codigoOp = $"OP-{contadorOperaciones++}";
                 TransaccionVenta nueva = new TransaccionVenta(codigoOp, cli, canal, total, resumen);
 
-                listaHistorial.InsertarAlFinal(nueva); // Inserción dinámica O(1)
+                // Registra la operación en Lista Simple (historial), Lista Doble (auditoría) y ABB (búsqueda por código).
+                RegistrarTransaccionEnEstructuras(nueva, insertarAbbBalanceado: true);
                 MessageBox.Show($"Transacción {codigoOp} procesada vía {canal}.\nMonto: S/ {total:F2}", "Venta Confirmada", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 pilaCarrito.Limpiar();
+                nudDescuentoPct.Value = 0;
                 ActualizarCarritoVisual();
                 RefrescarComboProductos();
                 RefrescarVistaInventario();
@@ -930,13 +1026,13 @@ namespace BoticaMarFarmaTransaccional
             };
 
             btnAuditoriaAtras.Click += (s, e) => {
-                TransaccionVenta anterior = listaHistorial.Retroceder();
+                TransaccionVenta? anterior = listaHistorial.Retroceder();
                 RefrescarAuditoriaVisual();
                 if (anterior == null) MessageBox.Show("Inicio del registro alcanzado.", "Auditoría", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
 
             btnAuditoriaAdelante.Click += (s, e) => {
-                TransaccionVenta siguiente = listaHistorial.Avanzar();
+                TransaccionVenta? siguiente = listaHistorial.Avanzar();
                 RefrescarAuditoriaVisual();
                 if (siguiente == null) MessageBox.Show("Última operación alcanzada.", "Auditoría", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
@@ -972,7 +1068,7 @@ namespace BoticaMarFarmaTransaccional
                     $"CAMP-{contadorCampanas++:D2}",
                     txtNuevaPromoTitulo.Text.Trim(),
                     txtNuevaPromoBeneficio.Text.Trim(),
-                    cmbNuevaPromoCanal.SelectedItem.ToString(),
+                    cmbNuevaPromoCanal.SelectedItem?.ToString() ?? "General",
                     dtpVigenciaPromo.Value
                 );
 
@@ -985,10 +1081,28 @@ namespace BoticaMarFarmaTransaccional
             };
         }
 
+        // Inserta una venta en Lista Simple (historial general), Lista Doble (auditoría) y opcionalmente en el ABB de operaciones.
+        private void RegistrarTransaccionEnEstructuras(TransaccionVenta transaccion, bool insertarAbbBalanceado)
+        {
+            listaSimpleHistorial.InsertarAlFinal(transaccion);
+            listaHistorial.InsertarAlFinal(transaccion);
+            if (insertarAbbBalanceado)
+            {
+                arbolOperaciones.Insertar(transaccion);
+            }
+        }
+
+        // Lee valores decimales aceptando punto o coma como separador según el teclado del usuario.
+        private static bool IntentarLeerDecimal(string texto, out decimal valor)
+        {
+            string normalizado = (texto ?? string.Empty).Trim().Replace(',', '.');
+            return decimal.TryParse(normalizado, NumberStyles.Any, CultureInfo.InvariantCulture, out valor);
+        }
+
         // Mueve la campaña actual al siguiente nodo del anillo y refresca sus representaciones.
         private void AvanzarCarruselCircular()
         {
-            CampanaSalud promo = carruselCampanas.AvanzarSiguiente(); // O(1)
+            CampanaSalud? promo = carruselCampanas.AvanzarSiguiente(); // O(1)
             ActualizarBannerEnPantalla();
             if (pnlVistaCarrusel.Visible)
             {
@@ -999,7 +1113,7 @@ namespace BoticaMarFarmaTransaccional
         // Copia los datos de la campaña actual a los banners de venta y del carrusel.
         private void ActualizarBannerEnPantalla()
         {
-            CampanaSalud promo = carruselCampanas.ObtenerActual();
+            CampanaSalud? promo = carruselCampanas.ObtenerActual();
             if (promo != null)
             {
                 lblBannerPromocionVenta.Text = $" [{promo.CanalAsociado}] {promo.Titulo}: {promo.BeneficioDescuento} (Válido hasta: {promo.FechaVigenciaFin:dd/MM/yyyy})";
@@ -1018,7 +1132,7 @@ namespace BoticaMarFarmaTransaccional
                 lstTrazasAnillo.Items.Add(traza);
         }
 
-        // Reconstruye la tabla del carrito y calcula subtotal, IGV y total para mostrarlos.
+        // Reconstruye la tabla del carrito y evalúa subtotal, descuento e IGV usando notación postfija con Pila.
         private void ActualizarCarritoVisual()
         {
             dgvCarrito.Rows.Clear();
@@ -1028,27 +1142,44 @@ namespace BoticaMarFarmaTransaccional
                 dgvCarrito.Rows.Add(d.ProductoItem.Nombre, d.Cantidad, $"S/ {d.ProductoItem.PrecioUnitario:F2}", $"S/ {d.Subtotal:F2}");
                 sub += d.Subtotal;
             }
-            decimal igv = sub * 0.18m;
-            decimal tot = sub + igv;
+
+            decimal descuento = sub * (nudDescuentoPct.Value / 100m);
+            decimal baseImponible = sub - descuento;
+            decimal igv = baseImponible * 0.18m;
+
+            // Convierte y evalúa la fórmula aritmética mediante Pila LIFO en notación postfija.
+            string infija = string.Format(CultureInfo.InvariantCulture, "( {0:F2} - {1:F2} ) * 1.18", sub, descuento);
+            string postfija = CalculadoraPostfija.ConvertirInfijaAPostfija(infija);
+            decimal tot = sub > 0 ? Math.Round(CalculadoraPostfija.EvaluarPostfija(postfija), 2) : 0m;
+
+            lblFormulaPostfija.Text = sub > 0
+                ? $"Infija  : {infija}\nPostfija: {postfija}"
+                : "Postfija (Pila): 0.00";
+
             lblSubtotalVenta.Text = $"Subtotal: S/ {sub:F2}";
             lblIgvVenta.Text = $"IGV (18%): S/ {igv:F2}";
             lblTotalVenta.Text = $"TOTAL: S/ {tot:F2}";
         }
 
-        // Suma los subtotales de la pila y devuelve el total incluyendo el 18 % de IGV.
+        // Evalúa el total a cobrar aplicando descuento e IGV mediante la Pila de notación postfija.
         private decimal CalcularTotal()
         {
             decimal sub = 0;
             foreach (var d in pilaCarrito.ObtenerElementos()) sub += d.Subtotal;
-            return sub * 1.18m;
+            if (sub <= 0) return 0m;
+
+            decimal descuento = sub * (nudDescuentoPct.Value / 100m);
+            string infija = string.Format(CultureInfo.InvariantCulture, "( {0:F2} - {1:F2} ) * 1.18", sub, descuento);
+            string postfija = CalculadoraPostfija.ConvertirInfijaAPostfija(infija);
+            return Math.Round(CalculadoraPostfija.EvaluarPostfija(postfija), 2);
         }
 
-        // Vuelca las transacciones en la tabla y actualiza el recuento y la recaudación.
+        // Vuelca las transacciones de la Lista Simple en la tabla y actualiza las métricas.
         private void ActualizarGrillaHistorial()
         {
             dgvHistorialCompleto.Rows.Clear();
             decimal recaudacion = 0;
-            var historial = listaHistorial.ObtenerHistorial();
+            var historial = listaSimpleHistorial.ObtenerHistorialCompleto();
             foreach (var t in historial)
             {
                 dgvHistorialCompleto.Rows.Add(t.CodigoOperacion, t.FechaHora.ToString("HH:mm:ss"), t.ClienteAsociado.NombreCompleto, t.CanalPago, $"S/ {t.MontoTotal:F2}", t.Estado, t.ResumenProductos);
@@ -1058,10 +1189,10 @@ namespace BoticaMarFarmaTransaccional
             lblMetricaRecaudacionCaja.Text = $"Caja Total: S/ {recaudacion:F2}";
         }
 
-        // Presenta los datos de la transacción seleccionada o el mensaje de historial vacío.
+        // Presenta los datos de la transacción seleccionada en la Lista Doble o el mensaje de historial vacío.
         private void RefrescarAuditoriaVisual()
         {
-            TransaccionVenta actual = listaHistorial.ObtenerActual();
+            TransaccionVenta? actual = listaHistorial.ObtenerActual();
             if (actual != null)
             {
                 lblTicketAuditado.Text = $"AUDITANDO: {actual.CodigoOperacion} | {actual.CanalPago} | Estado: {actual.Estado}";

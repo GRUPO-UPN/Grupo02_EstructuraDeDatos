@@ -277,5 +277,99 @@ namespace BoticaMarFarmaTransaccional.Grafos
             }
             return lineas;
         }
+
+        // Algoritmo de Prim: construye el Árbol de Expansión Mínima (MST) que conecta toda la red con el menor kilometraje total.
+        public double CalcularArbolExpansionMinimaPrim(List<string> trazas)
+        {
+            int n = vertices.Count;
+            if (n == 0) return 0;
+
+            bool[] enArbol = new bool[n];
+            double[] costoMin = new double[n];
+            int[] padre = new int[n];
+
+            for (int i = 0; i < n; i++)
+            {
+                costoMin[i] = double.MaxValue;
+                padre[i] = -1;
+            }
+
+            costoMin[0] = 0;
+            double totalKm = 0;
+            trazas.Add($"[PRIM] Construyendo Árbol de Expansión Mínima desde [{vertices[0].Dato.Codigo}]");
+
+            for (int paso = 0; paso < n; paso++)
+            {
+                int u = -1;
+                double menor = double.MaxValue;
+                for (int i = 0; i < n; i++)
+                {
+                    if (!enArbol[i] && costoMin[i] < menor)
+                    {
+                        menor = costoMin[i];
+                        u = i;
+                    }
+                }
+
+                if (u == -1) break;
+                enArbol[u] = true;
+
+                if (padre[u] != -1)
+                {
+                    totalKm += costoMin[u];
+                    trazas.Add($"  + Enlace óptimo: [{vertices[padre[u]].Dato.Codigo}] <-> [{vertices[u].Dato.Codigo}] ({costoMin[u]:F1} km)");
+                }
+
+                foreach (var arista in vertices[u].Adyacentes)
+                {
+                    int v = vertices.IndexOf(arista.Destino);
+                    if (!enArbol[v] && arista.DistanciaKm < costoMin[v])
+                    {
+                        costoMin[v] = arista.DistanciaKm;
+                        padre[v] = u;
+                    }
+                }
+            }
+
+            trazas.Add($"Total mínimo para conectar la red completa (Prim): {totalKm:F1} km");
+            return totalKm;
+        }
+
+        // Genera la Matriz de Adyacencia ponderada (filas = origen, columnas = destino) para inspección tabular.
+        public List<string> ObtenerMatrizAdyacenciaTexto()
+        {
+            List<string> filas = new List<string>();
+            int n = vertices.Count;
+            if (n == 0) return filas;
+
+            string cabecera = "       ";
+            for (int j = 0; j < n; j++)
+            {
+                cabecera += $" {vertices[j].Dato.Codigo,6}";
+            }
+            filas.Add(cabecera);
+            filas.Add(new string('-', cabecera.Length));
+
+            for (int i = 0; i < n; i++)
+            {
+                string linea = $"{vertices[i].Dato.Codigo,-6}|";
+                for (int j = 0; j < n; j++)
+                {
+                    double peso = 0;
+                    foreach (var arista in vertices[i].Adyacentes)
+                    {
+                        if (arista.Destino == vertices[j])
+                        {
+                            peso = arista.DistanciaKm;
+                            break;
+                        }
+                    }
+                    linea += peso > 0 ? $" {peso,6:F1}" : "      -";
+                }
+                filas.Add(linea);
+            }
+
+            return filas;
+        }
     }
 }

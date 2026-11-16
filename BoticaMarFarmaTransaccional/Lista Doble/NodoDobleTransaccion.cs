@@ -6,8 +6,8 @@ namespace BoticaMarFarmaTransaccional
     public class NodoDobleTransaccion
     {
         public TransaccionVenta Dato { get; set; }
-        public NodoDobleTransaccion Siguiente { get; set; }
-        public NodoDobleTransaccion Anterior { get; set; }
+        public NodoDobleTransaccion? Siguiente { get; set; }
+        public NodoDobleTransaccion? Anterior { get; set; }
 
         public NodoDobleTransaccion(TransaccionVenta dato)
         {
